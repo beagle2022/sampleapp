@@ -11,6 +11,18 @@ function setup() {
 		let v=createVector(x,y);
 		cirPath.push(v);
 	}
+
+	let astart=0;
+	let aend=120;
+	let xs=radius * cos(astart);
+	let ys=radius * sin(astart);
+	let xe=radius * cos(aend);
+	let ye=radius * sin(aend);
+
+	triPath.push(createVector(xs,ys));
+	triPath.push(createVector(xe,ye));
+
+
 }
 
 function draw() {
@@ -26,4 +38,19 @@ function draw() {
 	}
 
 	endShape();
+
+	beginShape();
+	for(let i=0;i<triPath.length;i++){
+		let v=triPath[i];
+		vertex(v.x,v.y);
+	}
+
+	endShape();
+
+
+
+
+
+
+
 }
