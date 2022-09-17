@@ -1,26 +1,38 @@
 let cirPath=[];
 let triPath=[];
 let spacing=10;
+
+function polarToCartesian(r,angle){
+	return createVector(r*cos(angle),r*sin(angle));
+}
+
 function setup() {
 	createCanvas(400,400);
 	angleMode(DEGREES);
 	let radius=100;
-	for(let a=0;a<120;a+=spacing){
+	let startA=0;
+	let endA=120;
+	let start=polarToCartesian(radius,startA);
+	let end=polarToCartesian(radius,endA);
+
+	for(let a=startA;a<360;a+=spacing){
 		let x=radius * cos(a);
 		let y=radius * sin(a);
-		let v=createVector(x,y);
-		cirPath.push(v);
+		let cv=polarToCartesian(radius,a);
+		cirPath.push(cv);
+		let amt=a/(endA-startA);
+		let tv=p5.Vector.lerp(start,end,amt);
+		triPath.push(tv);
+
+		if(a%120===0){
+			startA+=120;
+			endA+=120;
+			start=polarToCartesian(radius,startA);
+			end=polarToCartesian(radius,endA);
+		}	
 	}
 
-	let astart=0;
-	let aend=120;
-	let xs=radius * cos(astart);
-	let ys=radius * sin(astart);
-	let xe=radius * cos(aend);
-	let ye=radius * sin(aend);
 
-	triPath.push(createVector(xs,ys));
-	triPath.push(createVector(xe,ye));
 
 
 }
