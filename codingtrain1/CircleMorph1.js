@@ -42,6 +42,7 @@ function draw() {
 	translate(width/2, height/2);
 	rotate(30);
 	stroke(0);
+	strokeWeight(4);
 	noFill();
 	let amt=(sin(theta)+1)/2;
 	theta+=5;
