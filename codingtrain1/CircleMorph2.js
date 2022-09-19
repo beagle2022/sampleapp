@@ -1,91 +1,126 @@
-let cirPath=[];
-let triPath=[];
-//let morPath=[];
-let spacing=10;
-let theta=0;
+// Convert a circle into a square
+// by moving points evenly sampled along the circle, 
+// towards points on the square, resampled at equal intervals.
+// Golan Levin, August 2016
 
+var radius;
+var nPoints, quarter;
+var shiftQuadrant = 0;
+var nSquarePoints = 4;
+var counter = 0;
+var squarePoints = []; // the 4 vertices of the square
+var srcPoints = []; // points along the circle
+var dstPoints = []; // points along the square
+var curPercents = []; // percentages of interpolation
+var bDrawDebug = true;
+var bDoSkipQuadrant = true;
 
-function polarToCartesian(r,angle){
-	return createVector(r*cos(angle),r*sin(angle));
-}
-
+//-----------------------------------------
 function setup() {
-	createCanvas(400,400);
-	angleMode(DEGREES);
-	let radius=100;
-	let startA=0;
-	let endA=120;
-	let start=polarToCartesian(radius,startA);
-	let end=polarToCartesian(radius,endA);
-	for(let a=startA; a<360; a+=spacing){
-		let cv=polarToCartesian(radius,a);
-		cirPath.push(cv);
-		let amt=(a%120)/(endA-startA);
-		let tv=p5.Vector.lerp(start,end,amt);
-		triPath.push(tv);
-		console.log(a%120);
+  createCanvas(400, 400);
+  nPoints = 360;
+  quarter = (nPoints / nSquarePoints);
+  radius = width / 2 * 0.75;
 
-		if((a + spacing) % 120 === 0){
-			console.log("oops");
-			startA+=120;
-			endA+=120;
-			start=polarToCartesian(radius,startA);
-			end=polarToCartesian(radius,endA);
-		}	
-	}
+  for (var i = 0; i < nSquarePoints; i++) {
+    var x = radius * cos(i * TWO_PI / nSquarePoints - HALF_PI);
+    var y = radius * sin(i * TWO_PI / nSquarePoints - HALF_PI);
+    squarePoints[i] = {
+      x, y
+    };
+  }
 
+  // compute srcPoints: points on the circle. Also reset curPercents.
+  for (var j = 0; j < nPoints; j++) {
+    curPercents[j] = 0;
+    var t = map(j, 0, nPoints, 0, TWO_PI);
+    var x = radius * cos(t);
+    var y = radius * sin(t);
+    srcPoints[j] = {
+      x, y
+    };
+  }
+
+  // compute dstPoints: points along the square
+  for (var j = 0; j < nPoints; j++) {
+    var x1 = 0;
+    var y1 = 0;
+    var x2 = srcPoints[j].x;
+    var y2 = srcPoints[j].y;
+
+    var i = (floor((j + nPoints) / quarter) + 1) % nSquarePoints;
+    var x3 = squarePoints[(i + 0) % nSquarePoints].x;
+    var y3 = squarePoints[(i + 0) % nSquarePoints].y;
+    var x4 = squarePoints[(i + 1) % nSquarePoints].x;
+    var y4 = squarePoints[(i + 1) % nSquarePoints].y;
+
+    var numra = (x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3);
+    var numrb = (x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3);
+    var denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+    var ua = numra / denom;
+    var ub = numrb / denom;
+    var x = x1 + ua * (x2 - x1);
+    var y = y1 + ua * (y2 - y1);
+    dstPoints[j] = {
+      x, y
+    };
+  }
 }
 
+//-----------------------------------------
 function draw() {
-	// put drawing code here
-	background(220);
-	translate(width/2, height/2);
-	rotate(30);
-	stroke(0);
-	strokeWeight(4);
-	noFill();
-	let amt=(sin(theta)+1)/2;
-	theta+=5;
-	beginShape();
-	for(i=0;i<cirPath.length;i++){
+  background(255);
+  noFill();
+  push();
+  translate(width / 2, height / 2);
 
-		let cv=cirPath[i];
-		let tv=triPath[i];
-
-		let x=lerp(cv.x,tv.x,amt);
-		let y=lerp(cv.y,tv.y,amt);
-		vertex(x,y);
-	}
+  if (mouseIsPressed) { // whoa
+    rotate(HALF_PI + PI - map(counter + 1, 0, nPoints, 0, TWO_PI));
+  } else {
+    rotate(PI * 0.25);
+  }
 
 
+  counter = (counter + 1) % (nPoints);
 
-	//Circle
-/* 	for(let i=0;i<cirPath.length;i++){
-		let v=cirPath[i];
-		vertex(v.x,v.y);
-	} 
+  if (!bDoSkipQuadrant) {
+    curPercents[counter] = 1 - curPercents[counter];
+  } else {
+    var curQuadrant = int(counter / quarter);
+    if (curQuadrant != shiftQuadrant) {
+      curPercents[counter] = 1 - curPercents[counter];
+    }
+    if (counter === 0) {
+      shiftQuadrant = (shiftQuadrant + 1) % (nSquarePoints + 1);
+    }
+  }
 
-	//little points/* 
-	for(i=0;i<triPath.length;i++){
-		let v=triPath[i];
-		ellipse(v.x,v.y,8);
-	} */
+  if (bDrawDebug) {
+    stroke(255, 0, 0, 64);
+    strokeWeight(1);
+    px = map(curPercents[counter], 0, 1, srcPoints[counter].x, dstPoints[counter].x);
+    py = map(curPercents[counter], 0, 1, srcPoints[counter].y, dstPoints[counter].y);
+    line(0, 0, px, py);
+  }
 
-	endShape(CLOSE);
-	
-/* 	//Triangle
-	beginShape();
-		for(let i=0;i<triPath.length;i++){
-			let v=triPath[i];
-			vertex(v.x,v.y);
-		}
+  stroke(0);
+  strokeWeight(3);
+  strokeJoin(MITER);
+  beginShape();
+  for (var i = 0; i < nPoints; i++) {
+    var pcti = curPercents[i];
+    var pctj = curPercents[(i + 1) % nPoints];
+    px = map(pcti, 0, 1, srcPoints[i].x, dstPoints[i].x);
+    py = map(pcti, 0, 1, srcPoints[i].y, dstPoints[i].y);
+    vertex(px, py);
 
-	endShape(CLOSE);
- */
-
-
-
-
-
-
+    if (((pcti !== pctj) && (!bDoSkipQuadrant)) ||
+      ((pcti !== pctj) && (bDoSkipQuadrant) && (((i + 1) % quarter) != 0))) {
+      qx = map(pctj, 0, 1, srcPoints[i].x, dstPoints[i].x);
+      qy = map(pctj, 0, 1, srcPoints[i].y, dstPoints[i].y);
+      vertex(qx, qy);
+    }
+  }
+  endShape(CLOSE);
+  pop();
 }
