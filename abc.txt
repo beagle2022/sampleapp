@@ -1,2 +1,1 @@
 my first text file in sample repo
-I am Dev2
